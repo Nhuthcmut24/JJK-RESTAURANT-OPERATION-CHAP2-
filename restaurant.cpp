@@ -1,34 +1,150 @@
 #include "main.h"
 int MAXSIZE = 7;
-class SukanaRestaurant
+class sukanaNode
 {
 private:
-	int *arrayOfAreas;
+	int numOfCustomer;
+	int areaLabel;
+	friend class Restaurant;
+	friend class SukanaRestaurant;
+
+public:
+	sukanaNode()
+	{
+		this->numOfCustomer = 0;
+		this->areaLabel = 0;
+	}
+	sukanaNode(int numGuest, int label)
+	{
+		this->numOfCustomer = numGuest;
+		this->areaLabel = label;
+	}
+};
+class SukanaRestaurant
+{
+
+private:
+	vector<sukanaNode *> arrayOfAreas;
+	vector<sukanaNode *> minHeap;
+	vector<int> checkInList;
+	friend class Restaurant;
 
 public:
 	SukanaRestaurant()
 	{
-		this->arrayOfAreas = new int[MAXSIZE];
+		this->arrayOfAreas.resize(MAXSIZE);
 		for (int i = 0; i < MAXSIZE; i++)
 		{
-			arrayOfAreas[i] = 0;
+			arrayOfAreas[i] = new sukanaNode(0, i + 1);
 		}
+		this->minHeap.resize(0);
 	}
 	~SukanaRestaurant()
 	{
-		delete[] arrayOfAreas;
+		for (int i = 0; i < MAXSIZE; i++)
+		{
+			delete arrayOfAreas[i];
+		}
+		for (int i = 0; i < minHeap.size(); i++)
+		{
+			delete minHeap[i];
+		}
+	}
+	void getOutCus(int area, int numOfGuest)
+	{
+		for (int i = 0; i < numOfGuest; i++)
+		{
+			for (int i = 0; i < this->checkInList.size(); i++)
+			{
+				if (this->checkInList[i] == area)
+				{
+					this->checkInList.erase(this->checkInList.begin() + i);
+					break;
+				}
+			}
+			this->arrayOfAreas[area - 1]--;
+			for (int i = 0; i < this->minHeap.size(); i++)
+			{
+				if (this->minHeap[i]->areaLabel == area)
+				{
+					this->minHeap[i]->numOfCustomer--;
+					this->reheapUp(i, false);
+					if (this->minHeap[i]->numOfCustomer == 0)
+					{
+						this->deleteMinHeap(this->minHeap, area);
+					}
+					break;
+				}
+			}
+		}
+	}
+	void mergeSukanaNode(vector<sukanaNode *> &nodeList, int start, int step)
+	{
+		for (int i = step + start; i < nodeList.size(); i += step)
+		{
+			int j = i;
+			while (j > start && nodeList[j]->numOfCustomer <= nodeList[j - step]->numOfCustomer)
+			{
+				if (nodeList[j]->numOfCustomer < nodeList[j - step]->numOfCustomer)
+				{
+					swap(nodeList[j], nodeList[j - step]);
+					j = j - step;
+				}
+				else
+				{
+					if (this->x1longerServicex2(nodeList[j]->areaLabel, nodeList[j - step]->areaLabel))
+					{
+						swap(nodeList[j], nodeList[j - step]);
+						j = j - step;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	void mergeSortSukanaNode(vector<sukanaNode *> &nodeList)
+	{
+		int k = nodeList.size();
+		while (k > 0)
+		{
+			for (int i = 0; i < k; i++)
+			{
+				this->mergeSukanaNode(nodeList, i, k);
+			}
+			k /= 2;
+		}
+	}
+
+	vector<sukanaNode *> minCusArea(int number)
+	{
+		vector<sukanaNode *> result;
+		vector<sukanaNode *> temp = this->minHeap;
+		this->mergeSortSukanaNode(temp);
+		if (number > temp.size())
+		{
+			number = temp.size();
+		}
+		for (int i = 0; i < number; i++)
+		{
+			result.push_back(temp[i]);
+		}
+		return result;
 	}
 	void reheapUp(int position, bool in)
 	{
 		if (position % 2 == 0)
 		{
-			while ((position - 2) / 2 >= 0 && arrayOfAreas[position] <= arrayOfAreas[(position - 2) / 2])
+			while ((position - 2) / 2 >= 0 && this->minHeap[position]->numOfCustomer <= this->minHeap[(position - 2) / 2]->numOfCustomer)
 			{
-				if (arrayOfAreas[position] <= arrayOfAreas[(position - 2) / 2])
+				if (this->minHeap[position]->numOfCustomer <= this->minHeap[(position - 2) / 2]->numOfCustomer)
 				{
 					if (!in)
 					{
-						swap(arrayOfAreas[position], arrayOfAreas[(position - 2) / 2]);
+						swap(this->minHeap[position]->numOfCustomer, this->minHeap[(position - 2) / 2]->numOfCustomer);
 						position = (position - 2) / 2;
 					}
 					else
@@ -38,20 +154,20 @@ public:
 				}
 				else
 				{
-					swap(arrayOfAreas[position], arrayOfAreas[(position - 2) / 2]);
+					swap(this->minHeap[position]->numOfCustomer, this->minHeap[(position - 2) / 2]->numOfCustomer);
 					position = (position - 2) / 2;
 				}
 			}
 		}
 		else
 		{
-			while ((position - 1) / 2 >= 0 && arrayOfAreas[position] <= arrayOfAreas[(position - 1) / 2])
+			while ((position - 1) / 2 >= 0 && this->minHeap[position]->numOfCustomer <= this->minHeap[(position - 1) / 2]->numOfCustomer)
 			{
-				if (arrayOfAreas[position] <= arrayOfAreas[(position - 1) / 2])
+				if (this->minHeap[position]->numOfCustomer <= this->minHeap[(position - 1) / 2]->numOfCustomer)
 				{
 					if (!in)
 					{
-						swap(arrayOfAreas[position], arrayOfAreas[(position - 1) / 2]);
+						swap(this->minHeap[position]->numOfCustomer, this->minHeap[(position - 1) / 2]->numOfCustomer);
 						position = (position - 1) / 2;
 					}
 					else
@@ -61,7 +177,7 @@ public:
 				}
 				else
 				{
-					swap(arrayOfAreas[position], arrayOfAreas[(position - 1) / 2]);
+					swap(this->minHeap[position]->numOfCustomer, this->minHeap[(position - 1) / 2]->numOfCustomer);
 					position = (position - 1) / 2;
 				}
 			}
@@ -71,15 +187,15 @@ public:
 	{
 		int l = 2 * position + 1;
 		int r = 2 * position + 2;
-		if (arrayOfAreas[l] < arrayOfAreas[r])
+		if (this->minHeap[l]->numOfCustomer < this->minHeap[r]->numOfCustomer)
 		{
-			while (l < MAXSIZE && arrayOfAreas[position] >= arrayOfAreas[l])
+			while (l < MAXSIZE && this->minHeap[position]->numOfCustomer >= this->minHeap[l]->numOfCustomer)
 			{
-				if (arrayOfAreas[position] == arrayOfAreas[l])
+				if (this->minHeap[position]->numOfCustomer == this->minHeap[l]->numOfCustomer)
 				{
 					if (in)
 					{
-						swap(arrayOfAreas[position], arrayOfAreas[l]);
+						swap(this->minHeap[position], this->minHeap[l]);
 						reheapDown(l, in);
 					}
 					else
@@ -90,20 +206,20 @@ public:
 				else
 				{
 
-					swap(arrayOfAreas[position], arrayOfAreas[l]);
+					swap(this->minHeap[position], this->minHeap[l]);
 					reheapDown(l, in);
 				}
 			}
 		}
 		else
 		{
-			while (r < MAXSIZE && arrayOfAreas[position] >= arrayOfAreas[r])
+			while (r < MAXSIZE && this->minHeap[position]->numOfCustomer >= this->minHeap[r]->numOfCustomer)
 			{
-				if (arrayOfAreas[position] == arrayOfAreas[r])
+				if (this->minHeap[position]->numOfCustomer == this->minHeap[r]->numOfCustomer)
 				{
 					if (in)
 					{
-						swap(arrayOfAreas[position], arrayOfAreas[r]);
+						swap(this->minHeap[position], this->minHeap[r]);
 						reheapDown(r, in);
 					}
 					else
@@ -113,17 +229,92 @@ public:
 				}
 				else
 				{
-					swap(arrayOfAreas[position], arrayOfAreas[r]);
+					swap(this->minHeap[position], this->minHeap[r]);
 					reheapDown(r, in);
 				}
 			}
 		}
 	}
+
+	bool containAreaInMinHeap(int areaNumber)
+	{
+		for (int i = 0; i < this->minHeap.size(); i++)
+		{
+			if (this->minHeap[i]->areaLabel == areaNumber)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void heapify(vector<sukanaNode *> &minheap, sukanaNode *newArea)
+	{
+		minheap.push_back(newArea);
+		this->reheapUp(minheap.size() - 1, true);
+		this->reheapDown(minheap.size() - 1, true);
+	}
+
+	bool x1longerServicex2(int area1, int area2)
+	{
+		bool area1 = false;
+		bool area2 = false;
+		for (int i = 0; i < this->checkInList.size(); i++)
+		{
+			if (this->checkInList[i] == area1)
+			{
+				area1 = true;
+			}
+			if (this->checkInList[i] == area2)
+			{
+				area2 = true;
+			}
+			if (area1 == false && area2 == true)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void deleteMinHeap(vector<sukanaNode *> &Heap, int area)
+	{
+		int index = 0;
+		for (int i = 0; i < Heap.size(); i++)
+		{
+			if (Heap[i]->areaLabel == area)
+			{
+				index = i;
+			}
+		}
+		Heap[index] = Heap[Heap.size() - 1];
+		Heap.pop_back();
+		this->reheapDown(index, false);
+	}
+
 	void welcomeToSukanaRestaurant(int id)
 	{
-		this->arrayOfAreas[id - 1]++;
-		this->reheapUp(id - 1, true);
-		this->reheapDown(id - 1, true);
+		this->checkInList.push_back(id);
+		this->arrayOfAreas[id - 1]->numOfCustomer++;
+		if (!this->containAreaInMinHeap(id))
+		{
+			sukanaNode *temp = this->arrayOfAreas[id - 1];
+			this->heapify(this->minHeap, temp);
+			this->reheapUp(id - 1, true);
+			this->reheapDown(id - 1, true);
+		}
+		else
+		{
+			for (int i = 0; i < this->minHeap.size(); i++)
+			{
+				if (this->minHeap[i]->areaLabel == id)
+				{
+					this->minHeap[i]->numOfCustomer++;
+					this->reheapDown(i, true);
+					break;
+				}
+			}
+		}
 	}
 };
 
@@ -580,7 +771,6 @@ public:
 				}
 				else
 				{
-
 					swap(v2[j], v2[j - step]);
 					swap(v1[j], v1[j - step]);
 					j -= step;
@@ -786,11 +976,16 @@ public:
 					Y = this->gojoRestaurant->numberOfOrderArray(this->gojoRestaurant->arrayOfRoot[i]) - 1;
 				}
 			}
+			this->gojoRestaurant->getCustomerOut(Y, i + 1);
 		}
 	}
-	void KEITEIKEN()
+	void KEITEIKEN(int num)
 	{
-		
+		vector<sukanaNode *> areaToDelete = this->sukanaRestaurant->minCusArea(num);
+		for (int i = 0; i < areaToDelete.size(); i++)
+		{
+			this->sukanaRestaurant->getOutCus(areaToDelete[i]->areaLabel, num);
+		}
 	}
 };
 
