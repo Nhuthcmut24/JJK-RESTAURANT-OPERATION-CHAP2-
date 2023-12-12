@@ -1,15 +1,36 @@
 #include "main.h"
 int MAXSIZE = 7;
+
+class cusNode
+{
+public:
+	int result;
+	int ID;
+
+public:
+	cusNode()
+	{
+		this->result = 0;
+		this->ID = 0;
+	}
+	cusNode(int result, int ID)
+	{
+		this->result = result;
+		this->ID = ID;
+	}
+};
 class sukanaNode
 {
 private:
 	int numOfCustomer;
 	int areaLabel;
+	vector<cusNode *> listCusInArea;
 	friend class Restaurant;
 	friend class SukanaRestaurant;
 
 public:
 	sukanaNode()
+
 	{
 		this->numOfCustomer = 0;
 		this->areaLabel = 0;
@@ -49,6 +70,25 @@ public:
 		{
 			delete minHeap[i];
 		}
+	}
+	void printPreOderHeap(int position, int number)
+	{
+		if (position >= this->minHeap.size() && number > 0)
+		{
+			return;
+		}
+		if (number > this->minHeap[position]->numOfCustomer)
+		{
+			number = this->minHeap[position]->numOfCustomer;
+		}
+		int tempNumber = number;
+		for (int i = 0; i < tempNumber; i++)
+		{
+			cout << this->minHeap[position]->listCusInArea[i]->ID << "-" << this->minHeap[position]->listCusInArea[i]->result << endl;
+			number--;
+		}
+		printPreOderHeap(2 * position + 1, number);
+		printPreOderHeap(2 * position + 2, number);
 	}
 	void getOutCus(int area, int numOfGuest)
 	{
@@ -399,6 +439,16 @@ public:
 		BSTToArray(root->right, result);
 		result.push_back(root->number);
 	}
+	void printInOrderBST(Node *root)
+	{
+		if (!root)
+		{
+			return;
+		}
+		printInOrderBST(root->left);
+		cout << root->number << endl;
+		printInOrderBST(root->right);
+	}
 	Node *insertBST(Node *newNode, Node *root)
 	{
 		if (!root)
@@ -588,6 +638,23 @@ public:
 	{
 		this->root = nullptr;
 	}
+	void printInOrder(HuffmanNode *root)
+	{
+		if (!root)
+		{
+			return;
+		}
+		printInOrder(root->left);
+		if (isalpha(root->charName))
+		{
+			cout << root->charName << endl;
+		}
+		else
+		{
+			cout << root->frequency << endl;
+		}
+		printInOrder(root->right);
+	}
 	long long binaryToDecimal(string binary)
 	{
 		int j = 0;
@@ -709,6 +776,7 @@ private:
 	vector<HuffmanNode *> HuffmanNodeQueue;
 	GojoRestaurant *gojoRestaurant;
 	SukanaRestaurant *sukanaRestaurant;
+	vector<HuffmanNode *> HuffmanNodeListToHand;
 
 public:
 	Restaurant()
@@ -928,6 +996,7 @@ public:
 					this->HuffTree->root = nullptr;
 				}
 			}
+			this->HuffmanNodeListToHand.push_back(this->HuffTree->root);
 			unordered_map<char, string> huffmanCodes;
 			string res;
 			this->HuffTree->generateHuffmanCodes(this->HuffTree->root, res, huffmanCodes);
@@ -956,6 +1025,8 @@ public:
 			else // Vao nha S
 			{
 				cout << "Welcome to Sukana Restaurant!" << endl;
+				cusNode *temp = new cusNode(result, ID);
+				this->sukanaRestaurant->arrayOfAreas[ID - 1]->listCusInArea.push_back(temp);
 				this->sukanaRestaurant->welcomeToSukanaRestaurant(ID);
 			}
 		}
@@ -986,6 +1057,21 @@ public:
 		{
 			this->sukanaRestaurant->getOutCus(areaToDelete[i]->areaLabel, num);
 		}
+	}
+	void HAND()
+	{
+		this->HuffTree->printInOrder(this->HuffmanNodeListToHand[HuffmanNodeListToHand.size() - 1]);
+	}
+	void LIMITLESS(int num)
+	{
+		if (num > 0 && num <= MAXSIZE)
+		{
+			this->gojoRestaurant->printInOrderBST(this->gojoRestaurant->arrayOfRoot[num - 1]); //
+		}
+	}
+	void CLEAVE(int num)
+	{
+		this->sukanaRestaurant->printPreOderHeap(0, num);
 	}
 };
 
