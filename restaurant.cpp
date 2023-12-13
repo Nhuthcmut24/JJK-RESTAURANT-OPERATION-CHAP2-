@@ -1,7 +1,7 @@
 #include "main.h"
-int MAXSIZE = 7;
+int MAXSIZE;
 
-class cusNode
+class cusNode // Lưu lịch sử khách hàng
 {
 public:
 	int result;
@@ -19,7 +19,7 @@ public:
 		this->ID = ID;
 	}
 };
-class sukanaNode
+class sukanaNode // Node in minheap of sukana Restaurant
 {
 private:
 	int numOfCustomer;
@@ -30,7 +30,6 @@ private:
 
 public:
 	sukanaNode()
-
 	{
 		this->numOfCustomer = 0;
 		this->areaLabel = 0;
@@ -41,9 +40,8 @@ public:
 		this->areaLabel = label;
 	}
 };
-class SukanaRestaurant
+class SukanaRestaurant // Restaurant of Sukana
 {
-
 private:
 	vector<sukanaNode *> arrayOfAreas;
 	vector<sukanaNode *> minHeap;
@@ -59,6 +57,7 @@ public:
 			arrayOfAreas[i] = new sukanaNode(0, i + 1);
 		}
 		this->minHeap.resize(0);
+		this->checkInList.resize(0);
 	}
 	~SukanaRestaurant()
 	{
@@ -71,30 +70,45 @@ public:
 			delete minHeap[i];
 		}
 	}
+	int totalCustomerInRestaurant()
+	{
+		int total = 0;
+		for (int i = 0; i < this->minHeap.size(); i++)
+		{
+			total += this->minHeap[i]->numOfCustomer;
+		}
+		return total;
+	}
 	void printPreOderHeap(int position, int number)
 	{
-		if (position >= this->minHeap.size() && number > 0)
+		if (position >= this->minHeap.size() || number <= 0)
 		{
 			return;
 		}
-		if (number > this->minHeap[position]->numOfCustomer)
-		{
-			number = this->minHeap[position]->numOfCustomer;
-		}
-		int tempNumber = number;
-		for (int i = 0; i < tempNumber; i++)
+		int numAtNode = min(number, this->minHeap[position]->numOfCustomer);
+		for (int i = 0; i < numAtNode; i++)
 		{
 			cout << this->minHeap[position]->listCusInArea[i]->ID << "-" << this->minHeap[position]->listCusInArea[i]->result << endl;
-			number--;
 		}
-		printPreOderHeap(2 * position + 1, number);
-		printPreOderHeap(2 * position + 2, number);
+		number -= numAtNode;
+		if (number > 0)
+		{
+			printPreOderHeap(2 * position + 1, number);
+			int numThatPrinted = this->totalCustomerInRestaurant() - number;
+			int remainNumToPrint = this->totalCustomerInRestaurant() - numThatPrinted;
+			printPreOderHeap(2 * position + 2, remainNumToPrint);
+		}
 	}
+
 	void getOutCus(int area, int numOfGuest)
 	{
+		if (numOfGuest > this->arrayOfAreas[area - 1]->numOfCustomer)
+		{
+			numOfGuest = this->arrayOfAreas[area - 1]->numOfCustomer;
+		}
 		for (int i = 0; i < numOfGuest; i++)
 		{
-			for (int i = 0; i < this->checkInList.size(); i++)
+			for (int i = 0; i < this->checkInList.size(); i++) // Xoa checkin List
 			{
 				if (this->checkInList[i] == area)
 				{
@@ -102,22 +116,26 @@ public:
 					break;
 				}
 			}
-			this->arrayOfAreas[area - 1]--;
+			this->arrayOfAreas[area - 1]->numOfCustomer--; // Xoa mang tinh
 			for (int i = 0; i < this->minHeap.size(); i++)
 			{
 				if (this->minHeap[i]->areaLabel == area)
 				{
 					this->minHeap[i]->numOfCustomer--;
-					this->reheapUp(i, false);
 					if (this->minHeap[i]->numOfCustomer == 0)
 					{
 						this->deleteMinHeap(this->minHeap, area);
+					}
+					else
+					{
+						this->reheapUp(i, false);
 					}
 					break;
 				}
 			}
 		}
 	}
+
 	void mergeSukanaNode(vector<sukanaNode *> &nodeList, int start, int step)
 	{
 		for (int i = step + start; i < nodeList.size(); i += step)
@@ -297,19 +315,18 @@ public:
 
 	bool x1longerServicex2(int area1, int area2)
 	{
-		bool area1 = false;
-		bool area2 = false;
+		bool Area1 = false, Area2 = false;
 		for (int i = 0; i < this->checkInList.size(); i++)
 		{
 			if (this->checkInList[i] == area1)
 			{
-				area1 = true;
+				Area1 = true;
 			}
 			if (this->checkInList[i] == area2)
 			{
-				area2 = true;
+				Area2 = true;
 			}
-			if (area1 == false && area2 == true)
+			if (Area1 == false && Area2 == true)
 			{
 				return false;
 			}
@@ -638,6 +655,57 @@ public:
 	{
 		this->root = nullptr;
 	}
+	bool balanceTotal(HuffmanNode *root)
+	{
+		if (!root)
+		{
+			return true;
+		}
+		if (abs(this->getBalanceFactor(root)) > 1)
+		{
+			return false;
+		}
+		return balanceTotal(root->left) && balanceTotal(root->right);
+	}
+	void printTree(HuffmanNode *root, int space, std::vector<std::string> &lines)
+	{
+		if (root == nullptr)
+		{
+			return;
+		}
+
+		// Khoảng cách giữa các nút
+		const int spacing = 3;
+		space += spacing;
+
+		// Xử lý nút bên phải trước
+		printTree(root->left, space, lines);
+
+		// Chuẩn bị dòng để in nút hiện tại
+		std::string line(space, ' ');
+		line += std::to_string(root->frequency);
+		if (isalpha(root->charName))
+		{
+			line += root->charName;
+		}
+		lines.push_back(line);
+
+		// Xử lý nút bên trái
+		printTree(root->right, space, lines);
+	}
+
+	void printTreeWrapper(HuffmanNode *root)
+	{
+		std::vector<std::string> lines;
+		printTree(root, 0, lines);
+
+		// In ngược các dòng để có đúng trật tự
+		std::reverse(lines.begin(), lines.end());
+		for (auto &line : lines)
+		{
+			std::cout << line << std::endl;
+		}
+	}
 	void printInOrder(HuffmanNode *root)
 	{
 		if (!root)
@@ -659,27 +727,16 @@ public:
 	{
 		int j = 0;
 		long long res = 0;
-		if (binary.length() > 10)
+		int count = binary.length();
+		if (count > 10)
 		{
-			string newBinary = "";
-			for (int i = 0; i < 10; i++)
-			{
-				newBinary += binary[i];
-			}
-			// cout << "new binary: " << newBinary << endl;
-			for (int i = newBinary.length() - 1; i >= 0; i--)
-			{
-				res += (newBinary[i] - '0') * pow(2, j);
-				j++;
-			}
+			count = 10;
 		}
-		else
+		for (int i = binary.length() - 1; count > 0; i--)
 		{
-			for (int i = binary.length() - 1; i >= 0; i--)
-			{
-				res += (binary[i] - '0') * pow(2, j);
-				j++;
-			}
+			res += (binary[i] - '0') * pow(2, j);
+			j++;
+			count--;
 		}
 		return res;
 	}
@@ -743,27 +800,48 @@ public:
 	}
 	HuffmanNode *rotate(HuffmanNode *r, int &count)
 	{
-
+		bool rot = false;
+		if (!r || this->balanceTotal(r) || count >= 3)
+		{
+			return r;
+		}
 		int bf = getBalanceFactor(r);
 		// Left - Left
 		if (bf > 1 && getBalanceFactor(r->left) >= 0)
 		{
-			return rotateRight(r, count);
+			r = rotateRight(r, count);
+			count++;
+			rot = true;
 		}
 		// Right - Right
 		if (bf < -1 && getBalanceFactor(r->right) <= 0)
 		{
-			return rotateLeft(r, count);
+			r = rotateLeft(r, count);
+			count++;
+			rot = true;
 		}
 		if (bf > 1 && getBalanceFactor(r->left) < 0)
 		{
 			r->left = rotateLeft(r->left, count);
-			return rotateRight(r, count);
+			r = rotateRight(r, count);
+			count++;
+			rot = true;
 		}
 		if (bf < -1 && getBalanceFactor(r->right) > 0)
 		{
 			r->right = rotateRight(r->right, count);
-			return rotateLeft(r, count);
+			r = rotateLeft(r, count);
+			count++;
+			rot = true;
+		}
+		if (!rot)
+		{
+			r->left = rotate(r->left, count);
+			r->right = rotate(r->right, count);
+		}
+		else
+		{
+			r = rotate(r, count);
 		}
 		return r;
 	}
@@ -790,6 +868,70 @@ public:
 		delete this->HuffTree;
 		delete this->gojoRestaurant;
 		delete this->sukanaRestaurant;
+	}
+	int findFreqOfChar(vector<char> &charVec, vector<int> &freqVec, char c)
+	{
+		for (int i = 0; i < charVec.size(); i++)
+		{
+			if (charVec[i] == c)
+			{
+				return freqVec[i];
+			}
+		}
+		return -1;
+	}
+	void frequencyOfChar(string str, vector<char> &charList, vector<int> &freqList)
+	{
+		for (int i = 0; i < str.length(); i++)
+		{
+			if (find(uniqueNameInput.begin(), uniqueNameInput.end(), str[i]) != uniqueNameInput.end())
+			{
+				// Loc ky tu bi lap
+			}
+			else
+			{
+				uniqueNameInput.push_back(str[i]);
+			}
+		}
+		// for (int i = 0; i < uniqueNameInput.size(); i++)
+		// {
+		// 	cout << uniqueNameInput[i] << " ";
+		// }
+		int freq[52];
+		fill(freq, freq + 52, 0);
+		for (int i = 0; i < str.length(); i++)
+		{
+			if (str[i] >= 'a' && str[i] <= 'z')
+			{
+				freq[(str[i] - 'a') * 2]++;
+			}
+			else
+			{
+				freq[max(1, 2 * (str[i] - 'A') + 1)]++;
+			}
+		}
+
+		for (int i = 0; i < 52; i++)
+		{
+			if (freq[i])
+			{
+				if (i % 2 == 0)
+				{
+					charList.push_back(char(i / 2 + 'a'));
+					freqList.push_back(freq[i]);
+				}
+				else
+				{
+					charList.push_back(char(max(1, (i - 1) / 2 + 'A')));
+					freqList.push_back(freq[i]);
+				}
+			}
+		}
+		unordered_map<char, int> mapCharAndFreq;
+		for (int i = 0; i < charList.size(); i++)
+		{
+			mapCharAndFreq[charList[i]] = freqList[i];
+		}
 	}
 	void mergeHuffNode(vector<HuffmanNode *> ls, int start = 0, int step = 1)
 	{
@@ -826,7 +968,7 @@ public:
 			{
 				if (v2[j] == v2[j - step])
 				{
-					if (v1[j] - v1[j - step] > 0)
+					if (!isupper(v1[j]) && isupper(v1[j - step]))
 					{
 						swap(v2[j], v2[j - step]);
 						swap(v1[j], v1[j - step]);
@@ -834,7 +976,22 @@ public:
 					}
 					else
 					{
-						break;
+						if (islower(v1[j]) && islower(v1[j - step]) && v1[j] - v1[j - step] < 0)
+						{
+							swap(v2[j], v2[j - step]);
+							swap(v1[j], v1[j - step]);
+							j -= step;
+						}
+						else if (isupper(v1[j]) && isupper(v1[j - step]) && v1[j] - v1[j - step] < 0)
+						{
+							swap(v2[j], v2[j - step]);
+							swap(v1[j], v1[j - step]);
+							j -= step;
+						}
+						else
+						{
+							break;
+						}
 					}
 				}
 				else
@@ -862,107 +1019,78 @@ public:
 	vector<char> uniqueNameInput;
 	void LAPSE(string name)
 	{
-		for (int i = 0; i < name.length(); i++)
-		{
-			if (find(uniqueNameInput.begin(), uniqueNameInput.end(), name[i]) != uniqueNameInput.end())
-			{
-				// Loc ky tu bi lap
-			}
-			else
-			{
-				uniqueNameInput.push_back(name[i]);
-			}
-		}
-		// for (int i = 0; i < uniqueNameInput.size(); i++)
-		// {
-		// 	cout << uniqueNameInput[i] << " ";
-		// }
-		int freq[52];
-		fill(freq, freq + 52, 0);
-		for (int i = 0; i < name.length(); i++)
-		{
-			if (name[i] >= 'a' && name[i] <= 'z')
-			{
-				freq[(name[i] - 'a') * 2]++;
-			}
-			else
-			{
-				freq[max(1, 2 * (name[i] - 'A') + 1)]++;
-			}
-		}
-		vector<char> charInName;
-		vector<int> freqCharInName;
-		for (int i = 0; i < 52; i++)
-		{
-			if (freq[i])
-			{
-				if (i % 2 == 0)
-				{
-					charInName.push_back(char(i / 2 + 'a'));
-					freqCharInName.push_back(freq[i]);
-				}
-				else
-				{
-					charInName.push_back(char(max(1, (i - 1) / 2 + 'A')));
-					freqCharInName.push_back(freq[i]);
-				}
-			}
-		}
-		unordered_map<char, int> mapCharAndFreq;
-		for (int i = 0; i < charInName.size(); i++)
-		{
-			mapCharAndFreq[charInName[i]] = freqCharInName[i];
-		}
-		// cout << "Truoc khi ma hoa Caesae" << endl;
-		// for (int i = 0; i < charInName.size(); i++)
-		// {
-		// 	cout << charInName[i] << ": " << freqCharInName[i] << endl;
-		// }
-		// cout << "---------------------------------------------------------\n";
+		vector<char> initChar;
+		vector<int> initFreq;
+		this->frequencyOfChar(name, initChar, initFreq);
 
+		cout << "Truoc khi ma hoa Caesae" << endl;
+		for (int i = 0; i < initChar.size(); i++)
+		{
+			cout << initChar[i] << ": " << initFreq[i] << endl;
+		}
+		cout << "---------------------------------------------------------\n";
+
+		string nameAfterCaesar = "";
+		for (int i = 0; i < name.length(); i++)
+		{
+			char base;
+			if (islower(name[i]))
+			{
+				base = 'a';
+			}
+			else
+			{
+				base = 'A';
+			}
+			nameAfterCaesar += static_cast<char>((name[i] - base + this->findFreqOfChar(initChar, initFreq, name[i])) % 26 + base);
+		}
 		// Ma hoa Caesar
-		for (int i = 0; i < charInName.size(); i++)
+		for (int i = 0; i < initChar.size(); i++)
 		{
-			charInName[i] = charInName[i] + (freqCharInName[i] % 26);
-		}
-		// cout << "Sau khi ma hoa Caesae" << endl;
-		// for (int i = 0; i < charInName.size(); i++)
-		// {
-		// 	cout << charInName[i] << ": " << freqCharInName[i] << endl;
-		// }
-		// cout << "---------------------------------------------------------\n";
-		// Cong don sau khi ma hoa
-
-		for (int i = 0; i < charInName.size() - 1; i++)
-		{
-			for (int j = i + 1; j < charInName.size(); j++)
+			char base;
+			if (islower(initChar[i]))
 			{
-				if (charInName[j] == charInName[i])
+				base = 'a';
+			}
+			else
+			{
+				base = 'A';
+			}
+			initChar[i] = static_cast<char>((initChar[i] - base + initFreq[i]) % 26 + base);
+		}
+
+		// cong don
+		for (int i = 0; i < initChar.size() - 1; i++)
+		{
+			for (int j = i + 1; j < initChar.size(); j++)
+			{
+				if (initChar[i] == initChar[j])
 				{
-					freqCharInName[i] += freqCharInName[j];
-					charInName.erase(charInName.begin() + j);
-					freqCharInName.erase(freqCharInName.begin() + j);
+					initFreq[i] += initFreq[j];
+					initChar.erase(initChar.begin() + j);
+					initFreq.erase(initFreq.begin() + j);
 				}
 			}
 		}
-		// cout << "Cong don chua sap xep" << endl;
-		// for (int i = 0; i < charInName.size(); i++)
-		// {
-		// 	cout << charInName[i] << ": " << freqCharInName[i] << endl;
-		// }
-		// cout << "---------------------------------------------------------\n";
-		DoubleMergeSort(charInName, freqCharInName);
-		// cout << "Cong don da sap xep" << endl;
-		// for (int i = 0; i < charInName.size(); i++)
-		// {
-		// 	cout << charInName[i] << ": " << freqCharInName[i] << endl;
-		// }
-		// cout << "---------------------------------------------------------\n";
-		//.....
-		// Tao vector cac node de buld Huffman tree
-		for (int i = 0; i < charInName.size(); i++)
+
+		cout << "Sau khi ma hoa Caesae (da cong don)" << endl;
+		for (int i = 0; i < initChar.size(); i++)
 		{
-			HuffmanNode *newNode = new HuffmanNode(freqCharInName[i], charInName[i]);
+			cout << initChar[i] << ": " << initFreq[i] << endl;
+		}
+		cout << "---------------------------------------------------------\n";
+
+		DoubleMergeSort(initChar, initFreq);
+		cout << " Da sap xep" << endl;
+		for (int i = 0; i < initChar.size(); i++)
+		{
+			cout << initChar[i] << ": " << initFreq[i] << endl;
+		}
+		cout << "---------------------------------------------------------\n";
+		// Tao vector cac node de buld Huffman tree
+		for (int i = 0; i < initChar.size(); i++)
+		{
+			HuffmanNode *newNode = new HuffmanNode(initFreq[i], initChar[i]);
 			this->HuffmanNodeQueue.push_back(newNode);
 		}
 
@@ -972,7 +1100,6 @@ public:
 		// {
 		// 	cout << "char: " << HuffmanNodeQueue[i]->charName << " - " << HuffmanNodeQueue[i]->frequency << endl;
 		// }
-		//
 
 		if (this->HuffmanNodeQueue.size() >= 3)
 		{
@@ -989,29 +1116,37 @@ public:
 				this->HuffTree->root = this->HuffTree->insertToHuffmanTree(temp1, temp2, this->HuffTree->root);
 				// Rotate (not fixed)
 				int numRotate = 0;
-				this->HuffTree->rotate(this->HuffTree->root, numRotate);
+				this->HuffTree->root = this->HuffTree->rotate(this->HuffTree->root, numRotate);
+				this->HuffTree->printTreeWrapper(this->HuffTree->root);
+				cout << "---------------------------------------------\n";
 				HuffmanNodeQueue.push_back(this->HuffTree->root);
+				int bub = this->HuffmanNodeQueue.size() - 1;
+				while (bub > 0 && HuffmanNodeQueue[bub]->frequency < HuffmanNodeQueue[bub - 1]->frequency)
+				{
+					swap(this->HuffmanNodeQueue[bub], this->HuffmanNodeQueue[bub - 1]);
+					bub--;
+				}
 				if (this->HuffmanNodeQueue.size() > 1)
 				{
 					this->HuffTree->root = nullptr;
 				}
 			}
 			this->HuffmanNodeListToHand.push_back(this->HuffTree->root);
+			// ??????
+
 			unordered_map<char, string> huffmanCodes;
 			string res;
 			this->HuffTree->generateHuffmanCodes(this->HuffTree->root, res, huffmanCodes);
 			// string nameAfterCaesar="";
-			string nameAfterCaesar = "";
-			for (int i = 0; i < name.length(); i++)
-			{
-				nameAfterCaesar += name[i] + mapCharAndFreq[name[i]] % 26;
-			}
+
 			string HuffmanBits = "";
 			for (int i = 0; i < nameAfterCaesar.length(); i++)
 			{
 				HuffmanBits += huffmanCodes[nameAfterCaesar[i]];
 			}
-			// cout << HuffmanBits << endl;
+			cout << "nameAfterCaesar: " << nameAfterCaesar << endl;
+			cout << "Bit string: ";
+			cout << HuffmanBits << endl;
 			int result = this->HuffTree->binaryToDecimal(HuffmanBits);
 			int ID = (result % MAXSIZE) + 1; // ID of customer
 			cout << "Result: " << result << endl;
@@ -1077,21 +1212,45 @@ public:
 
 void simulate(string filename)
 {
-	// ifstream ss(filename);
-	// string str, name, num, maxsize;
-	// while (ss >> str)
-	// {
-	// 	if (str == "MAXSIZE")
-	// 	{
-	// 		ss >> maxsize;
-	// 		MAXSIZE = stoi(maxsize);
-	// 	}
-	// 	else if (str == "LAPSE")
-	// 	{
-	// 		ss >> name;
-	// 	}
-	// }
 	Restaurant *r = new Restaurant();
-	r->LAPSE("NhutandUyen");
+	ifstream ss(filename);
+	string str, name, num, maxsize;
+
+	while (ss >> str)
+	{
+		if (str == "MAXSIZE")
+		{
+			ss >> maxsize;
+			MAXSIZE = stoi(maxsize);
+		}
+		else if (str == "LAPSE")
+		{
+			ss >> name;
+			r->LAPSE(name);
+		}
+		else if (str == "KOKUSEN")
+		{
+			r->KOKUSEN();
+		}
+		else if (str == "KEITEIKEN")
+		{
+			ss >> num;
+			r->KEITEIKEN(stoi(num));
+		}
+		else if (str == "HAND")
+		{
+			r->HAND();
+		}
+		else if (str == "LIMITLESS")
+		{
+			ss >> num;
+			r->LIMITLESS(stoi(num));
+		}
+		else
+		{
+			ss >> num;
+			r->CLEAVE(stoi(num));
+		}
+	}
 	delete r;
 }
