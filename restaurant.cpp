@@ -381,14 +381,14 @@ public:
 	class Node;
 
 private:
-	Node **arrayOfRoot;
-	vector<vector<Node *>> historyCustomer;
+	vector<Node *> arrayOfRoot; //Danh sach cac root cua cac khu vuc trong nha hang
+	vector<vector<Node *>> historyCustomer; //Danh sach khach hang cua tung khu vuc
 	friend class Restaurant;
 
 public:
 	GojoRestaurant()
 	{
-		this->arrayOfRoot = new Node *[MAXSIZE];
+		this->arrayOfRoot.resize(MAXSIZE);
 		for (int i = 0; i < MAXSIZE; i++)
 		{
 			arrayOfRoot[i] = nullptr;
@@ -579,7 +579,6 @@ public:
 		{
 			delete arrayOfRoot[i];
 		}
-		delete[] arrayOfRoot;
 	}
 	class Node
 	{
@@ -732,12 +731,18 @@ public:
 		{
 			count = 10;
 		}
+		string newBinary = "";
 		for (int i = binary.length() - 1; count > 0; i--)
 		{
-			res += (binary[i] - '0') * pow(2, j);
-			j++;
+			newBinary += binary[i];
 			count--;
 		}
+		for (int i = newBinary.length() - 1; i >= 0; i--)
+		{
+			res += (newBinary[i] - '0') * pow(2, j);
+			j++;
+		}
+
 		return res;
 	}
 	void generateHuffmanCodes(HuffmanNode *root, const string &code, unordered_map<char, string> &huffmanCodes)
@@ -765,26 +770,31 @@ public:
 	{
 		return getHeight(r->left) - getHeight(r->right);
 	}
-	HuffmanNode *rotateRight(HuffmanNode *r, int &count)
+	HuffmanNode *rotateRight(HuffmanNode *r, bool &rotated)
 	{
 		if (!r)
 		{
 			return r;
 		}
+		rotated = true;
 		HuffmanNode *temp1 = r->left;
 		HuffmanNode *temp2 = temp1->right;
 		temp1->right = r;
 		r->left = temp2;
-		count++;
 		return temp1;
 	}
-	HuffmanNode *rotateLeft(HuffmanNode *r, int &count)
+	HuffmanNode *rotateLeft(HuffmanNode *r, bool &rotated)
 	{
+		if (!r)
+		{
+			return r;
+		}
+		rotated = true;
+
 		HuffmanNode *temp1 = r->right;
 		HuffmanNode *temp2 = temp1->left;
 		temp1->left = r;
 		r->right = temp2;
-		count++;
 		return temp1;
 	}
 	HuffmanNode *insertToHuffmanTree(HuffmanNode *Node1, HuffmanNode *Node2, HuffmanNode *r)
@@ -798,50 +808,41 @@ public:
 		r->right = Node2;
 		return r;
 	}
-	HuffmanNode *rotate(HuffmanNode *r, int &count)
+
+	HuffmanNode *rotate(HuffmanNode *r, bool &rotated)
 	{
-		bool rot = false;
-		if (!r || this->balanceTotal(r) || count >= 3)
+		if (!r || rotated)
 		{
 			return r;
 		}
+
 		int bf = getBalanceFactor(r);
-		// Left - Left
 		if (bf > 1 && getBalanceFactor(r->left) >= 0)
 		{
-			r = rotateRight(r, count);
-			count++;
-			rot = true;
+			return rotateRight(r, rotated);
 		}
-		// Right - Right
-		if (bf < -1 && getBalanceFactor(r->right) <= 0)
+		else if (bf < -1 && getBalanceFactor(r->right) <= 0)
 		{
-			r = rotateLeft(r, count);
-			count++;
-			rot = true;
+			return rotateLeft(r, rotated);
 		}
-		if (bf > 1 && getBalanceFactor(r->left) < 0)
+		else if (bf > 1 && getBalanceFactor(r->left) < 0)
 		{
-			r->left = rotateLeft(r->left, count);
-			r = rotateRight(r, count);
-			count++;
-			rot = true;
+			r->left = rotateLeft(r->left, rotated);
+			return rotateRight(r, rotated);
 		}
-		if (bf < -1 && getBalanceFactor(r->right) > 0)
+		else if (bf < -1 && getBalanceFactor(r->right) > 0)
 		{
-			r->right = rotateRight(r->right, count);
-			r = rotateLeft(r, count);
-			count++;
-			rot = true;
+			r->right = rotateRight(r->right, rotated);
+			return rotateLeft(r, rotated);
 		}
-		if (!rot)
+
+		if (!rotated)
 		{
-			r->left = rotate(r->left, count);
-			r->right = rotate(r->right, count);
+			r->left = rotate(r->left, rotated);
 		}
-		else
+		if (!rotated)
 		{
-			r = rotate(r, count);
+			r->right = rotate(r->right, rotated);
 		}
 		return r;
 	}
@@ -1023,91 +1024,126 @@ public:
 		vector<int> initFreq;
 		this->frequencyOfChar(name, initChar, initFreq);
 
-		cout << "Truoc khi ma hoa Caesae" << endl;
-		for (int i = 0; i < initChar.size(); i++)
-		{
-			cout << initChar[i] << ": " << initFreq[i] << endl;
-		}
-		cout << "---------------------------------------------------------\n";
-
-		string nameAfterCaesar = "";
-		for (int i = 0; i < name.length(); i++)
-		{
-			char base;
-			if (islower(name[i]))
-			{
-				base = 'a';
-			}
-			else
-			{
-				base = 'A';
-			}
-			nameAfterCaesar += static_cast<char>((name[i] - base + this->findFreqOfChar(initChar, initFreq, name[i])) % 26 + base);
-		}
-		// Ma hoa Caesar
-		for (int i = 0; i < initChar.size(); i++)
-		{
-			char base;
-			if (islower(initChar[i]))
-			{
-				base = 'a';
-			}
-			else
-			{
-				base = 'A';
-			}
-			initChar[i] = static_cast<char>((initChar[i] - base + initFreq[i]) % 26 + base);
-		}
-
-		// cong don
-		for (int i = 0; i < initChar.size() - 1; i++)
-		{
-			for (int j = i + 1; j < initChar.size(); j++)
-			{
-				if (initChar[i] == initChar[j])
-				{
-					initFreq[i] += initFreq[j];
-					initChar.erase(initChar.begin() + j);
-					initFreq.erase(initFreq.begin() + j);
-				}
-			}
-		}
-
-		cout << "Sau khi ma hoa Caesae (da cong don)" << endl;
-		for (int i = 0; i < initChar.size(); i++)
-		{
-			cout << initChar[i] << ": " << initFreq[i] << endl;
-		}
-		cout << "---------------------------------------------------------\n";
-
-		DoubleMergeSort(initChar, initFreq);
-		cout << " Da sap xep" << endl;
-		for (int i = 0; i < initChar.size(); i++)
-		{
-			cout << initChar[i] << ": " << initFreq[i] << endl;
-		}
-		cout << "---------------------------------------------------------\n";
-		// Tao vector cac node de buld Huffman tree
-		for (int i = 0; i < initChar.size(); i++)
-		{
-			HuffmanNode *newNode = new HuffmanNode(initFreq[i], initChar[i]);
-			this->HuffmanNodeQueue.push_back(newNode);
-		}
-
-		// Debug check vector cac node de buld Huffman tree
-		// cout << "List node to build Huffman tree\n";
-		// for (int i = 0; i < HuffmanNodeQueue.size(); i++)
+		// cout << "Truoc khi ma hoa Caesae" << endl;
+		// for (int i = 0; i < initChar.size(); i++)
 		// {
-		// 	cout << "char: " << HuffmanNodeQueue[i]->charName << " - " << HuffmanNodeQueue[i]->frequency << endl;
+		// 	cout << initChar[i] << ": " << initFreq[i] << endl;
 		// }
-
-		if (this->HuffmanNodeQueue.size() >= 3)
+		// cout << "---------------------------------------------------------\n";
+		if (initChar.size() >= 3)
 		{
+			string nameAfterCaesar = "";
+			for (int i = 0; i < name.length(); i++)
+			{
+				char base;
+				if (islower(name[i]))
+				{
+					base = 'a';
+				}
+				else
+				{
+					base = 'A';
+				}
+				nameAfterCaesar += static_cast<char>((name[i] - base + this->findFreqOfChar(initChar, initFreq, name[i])) % 26 + base);
+			}
+			// Ma hoa Caesar
+			for (int i = 0; i < initChar.size(); i++)
+			{
+				char base;
+				if (islower(initChar[i]))
+				{
+					base = 'a';
+				}
+				else
+				{
+					base = 'A';
+				}
+				initChar[i] = static_cast<char>((initChar[i] - base + initFreq[i]) % 26 + base);
+			}
+
+			// cout << "Sau khi ma hoa Caesae (chua cong don)" << endl;
+			// for (int i = 0; i < initChar.size(); i++)
+			// {
+			// 	cout << initChar[i] << ": " << initFreq[i] << endl;
+			// }
+			// cout << "---------------------------------------------------------\n";
+
+			// cong don sau khi ma hoa Ceasar
+
+			vector<char> notSortChar;
+			vector<int> notSortFreq;
+			while (!initChar.empty())
+			{
+				notSortChar.push_back(initChar[0]);
+				// cout << "push character: " << initChar[0] << " to new list\n";
+				int temp = initFreq[0];
+				char sampleChar = initChar[0];
+				initChar.erase(initChar.begin());
+				initFreq.erase(initFreq.begin());
+				for (int i = 0; i < initChar.size(); i++)
+				{
+					if (initChar[i] == sampleChar)
+					{
+						temp += initFreq[i];
+						initChar.erase(initChar.begin() + i);
+						initFreq.erase(initFreq.begin() + i);
+						i--;
+					}
+				}
+				// cout << "total frequence  of " << notSortChar.back() << " is " << temp << endl;
+				notSortFreq.push_back(temp);
+			}
+			// cout << "Sau khi ma hoa Caesae (da cong don)" << endl;
+			// for (int i = 0; i < notSortChar.size(); i++)
+			// {
+			// 	cout << notSortChar[i] << ": " << notSortFreq[i] << endl;
+			// }
+			// cout << "---------------------------------------------------------\n";
+			// for (int i = 0; i < initChar.size() - 1; i++)
+			// {
+			// 	for (int j = i + 1; j < initChar.size(); j++)
+			// 	{
+			// 		if (initChar[j] == initChar[i])
+			// 		{
+			// 			initFreq[i] += initFreq[j];
+			// 			initChar.erase(initChar.begin() + j);
+			// 			initFreq.erase(initFreq.begin() + j);
+			// 		}
+			// 	}
+			// }
+
+			DoubleMergeSort(notSortChar, notSortFreq);
+			// cout << " Da sap xep" << endl;
+			// for (int i = 0; i < initChar.size(); i++)
+			// {
+			// 	cout << initChar[i] << ": " << initFreq[i] << endl;
+			// }
+			// cout << "---------------------------------------------------------\n";
+			// Tao vector cac node de buld Huffman tree
+			for (int i = 0; i < notSortChar.size(); i++)
+			{
+				HuffmanNode *newNode = new HuffmanNode(notSortFreq[i], notSortChar[i]);
+				this->HuffmanNodeQueue.push_back(newNode);
+			}
+
+			// Debug check vector cac node de buld Huffman tree
+			// cout << "List node to build Huffman tree\n";
+			// for (int i = 0; i < HuffmanNodeQueue.size(); i++)
+			// {
+			// 	cout << "char: " << HuffmanNodeQueue[i]->charName << " - " << HuffmanNodeQueue[i]->frequency << endl;
+			// }
+
 			while (HuffmanNodeQueue.size() > 1)
 			{
 				HuffmanNode *temp1 = HuffmanNodeQueue.front();
+				// cout << "Left sub tree\n";
+				// this->HuffTree->printTreeWrapper(temp1);
+				// cout << "----------------\n";
 				HuffmanNodeQueue.erase(HuffmanNodeQueue.begin());
 				HuffmanNode *temp2 = HuffmanNodeQueue.front();
+				// cout << "Right sub tree\n";
+				// this->HuffTree->printTreeWrapper(temp2);
+				// cout << "----------------\n";
 				HuffmanNodeQueue.erase(HuffmanNodeQueue.begin());
 				int tempRoot = temp1->frequency + temp2->frequency;
 				HuffmanNode *temp3 = new HuffmanNode();
@@ -1116,9 +1152,16 @@ public:
 				this->HuffTree->root = this->HuffTree->insertToHuffmanTree(temp1, temp2, this->HuffTree->root);
 				// Rotate (not fixed)
 				int numRotate = 0;
-				this->HuffTree->root = this->HuffTree->rotate(this->HuffTree->root, numRotate);
-				this->HuffTree->printTreeWrapper(this->HuffTree->root);
-				cout << "---------------------------------------------\n";
+				while (!this->HuffTree->balanceTotal(this->HuffTree->root) && numRotate < 3)
+				{
+					bool rotated = false;
+					this->HuffTree->root = this->HuffTree->rotate(this->HuffTree->root, rotated);
+					numRotate++;
+					// cout << "Xoay lan thu: " << numRotate << endl;
+				}
+				// cout << "Sub tree after rotate\n";
+				// this->HuffTree->printTreeWrapper(this->HuffTree->root);
+				// cout << "---------------------------------------------\n";
 				HuffmanNodeQueue.push_back(this->HuffTree->root);
 				int bub = this->HuffmanNodeQueue.size() - 1;
 				while (bub > 0 && HuffmanNodeQueue[bub]->frequency < HuffmanNodeQueue[bub - 1]->frequency)
@@ -1144,11 +1187,12 @@ public:
 			{
 				HuffmanBits += huffmanCodes[nameAfterCaesar[i]];
 			}
-			cout << "nameAfterCaesar: " << nameAfterCaesar << endl;
-			cout << "Bit string: ";
-			cout << HuffmanBits << endl;
+			// cout << "nameAfterCaesar: " << nameAfterCaesar << endl;
+			// cout << "Bit string: ";
+			// cout << HuffmanBits << endl;
+
 			int result = this->HuffTree->binaryToDecimal(HuffmanBits);
-			int ID = (result % MAXSIZE) + 1; // ID of customer
+			int ID = (result % MAXSIZE) + 1; // ID of customer (chay tu 1 cho den MAXSIZE)
 			cout << "Result: " << result << endl;
 			cout << "ID: " << ID << endl;
 			// Su dung ket qua result de dua khach vao nha G (VO LUONG KHONG XU) hay nha S (PHUC MA NGU CHUA)
